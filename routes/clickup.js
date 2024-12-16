@@ -5,9 +5,9 @@ const fs = require("fs");
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-const CLIENT_ID = "GTCLUVF8MSBD18FOUIQ9A2TGY4IU2CPW";
-const CLIENT_SECRET = "IYYFR0GVT7ZAND5LN3VE6TTGSZSKT49BXQV0LXTW9LVWB31BM5MN3IKSLBS7NO2P";
-const REDIRECT_URI = "http://localhost:5000/";
+const CLIENT_ID = "0O3MD4MTETBP5AU5LBJXGLIG9GAS2H2E";
+const CLIENT_SECRET = "GYKQZC3QEPLZ6DWJGJ41QJGOFMWXMI7IJ60AZU63380A2GML4DDV1LYC8OPBDYZ3";
+const REDIRECT_URI = "https://click-oauth.onrender.com/callback";
 const JWT_SECRET = process.env.JWT_SECRET; // Ensure you have a secret for JWT
 
 // Utility functions for managing users
@@ -24,7 +24,7 @@ router.get("/login", (req, res) => {
 });
 
 // Callback route for clickup OAuth
-router.get("/", async (req, res) => {
+router.get("/callback", async (req, res) => {
     const code = req.query.code;
 
     if (!code) {
