@@ -55,7 +55,7 @@ router.get('/profile', authMiddleware, (req, res) => {
     try {
        
         const users = readUsers();
-        const user = users.find((user) => user.id === req.user.userId) || users.find((user) => user.id === req.user.id);
+        const user = users.find((user) => user.id === req.user.userid) || users.find((user) => user.id === req.user.id);
         if (!user) return res.status(404).json({ error: 'User not found' });
         const { password, ...userData } = user;
         res.json(userData);

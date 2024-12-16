@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 const CLIENT_ID = "0O3MD4MTETBP5AU5LBJXGLIG9GAS2H2E";
@@ -15,15 +15,14 @@ const USERS_FILE = path.join(__dirname, "../data/users.json");
 const readUsers = () => JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
 const writeUsers = (users) => fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 
-// Route to initiate login with Sentry
+// Route to initiate login with ClickUp
 router.get("/login", (req, res) => {
-
     const scope = encodeURIComponent("project:read event:read"); // Specify the required scopes
     const loginUrl = `https://app.clickup.com/api?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code`; //&scope=${scope}
     res.redirect(loginUrl);
 });
 
-// Callback route for clickup OAuth
+// Callback route for ClickUp OAuth
 router.get("/callback", async (req, res) => {
     const code = req.query.code;
 
@@ -32,7 +31,6 @@ router.get("/callback", async (req, res) => {
     }
 
     try {
-        
         // Exchange authorization code for access token
         const tokenResponse = await axios.post(
             "https://api.clickup.com/api/v2/oauth/token",
@@ -50,14 +48,31 @@ router.get("/callback", async (req, res) => {
             }
         );
 
-        // Extract user details from the token response
-        const { data } = tokenResponse; // Assuming tokenResponse contains the structure as given
-        console.log(data);
+        const { access_token } = tokenResponse.data;
 
-        // Extract user data
-        const email = data.user.email;
-        const name = data.user.name;
+        if (!access_token) {
+            return res.status(500).send("Failed to retrieve access token");
+        }
 
+        // Use access token to fetch team details
+        const teamResponse = await axios.get("https://api.clickup.com/api/v2/team/", {
+            headers: {
+                Authorization: `Bearer ${access_token}`,
+            },
+        });
+
+        const teamData = teamResponse.data;
+
+        if (!teamData.teams || teamData.teams.length === 0) {
+            return res.status(500).send("No team information available");
+        }
+
+        // Extract user and team details
+        const team = teamData.teams[0]; // Assuming the user belongs to the first team
+        const name = team.members[0].user.username;
+        const email = team.members[0].user.email;
+        
+    
         if (!email) {
             return res.status(500).send("Unable to fetch user email");
         }
@@ -65,7 +80,6 @@ router.get("/callback", async (req, res) => {
         // Check if user exists
         let users = readUsers();
         let user = users.find((u) => u.email === email);
-     
 
         if (!user) {
             // If user doesn't exist, register them
@@ -73,7 +87,7 @@ router.get("/callback", async (req, res) => {
                 id: users.length + 1,
                 email,
                 name: name || "New User",
-                password: null, // Sentry login users won't have passwords
+                password: null, // ClickUp login users won't have passwords
             };
             users.push(newUser);
             writeUsers(users);
@@ -82,16 +96,16 @@ router.get("/callback", async (req, res) => {
 
         // Create JWT token for the user
         const token = jwt.sign(
-            { userId: user.id, email: user.email, name: user.name },
+            { userid: user.id, email: user.email, name: user.name },
             JWT_SECRET,
-            { expiresIn: '1h' } // Set the expiration time for the token
+            { expiresIn: "1h" } // Set the expiration time for the token
         );
-
-
-        res.send("<html><script>window.localStorage.setItem('token', '"+token+"');window.location.href = 'profile.html';</script></html>")
-
+    
+        res.send(
+            `<html><script>window.localStorage.setItem('token', '${token}');window.location.href = 'profile.html';</script></html>`
+        );
     } catch (error) {
-        console.error("Error during Sentry OAuth:", error.message);
+        console.error("Error during ClickUp OAuth:", error);
         res.status(500).send("Something went wrong during the OAuth process");
     }
 });
