@@ -9,11 +9,11 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-const trelloRoutes = require("./routes/trello");
+const clickupRoutes = require("./routes/clickup");
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use("/", trelloRoutes);
+app.use("/", clickupRoutes);
 
 // Start Server
 app.listen(PORT, () => {
