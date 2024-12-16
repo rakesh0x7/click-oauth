@@ -96,7 +96,7 @@ router.get("/callback", async (req, res) => {
 
         // Create JWT token for the user
         const token = jwt.sign(
-            { userid: user.id, email: user.email, name: user.name },
+            { id: user.id, email: user.email, name: user.name },
             JWT_SECRET,
             { expiresIn: "1h" } // Set the expiration time for the token
         );
