@@ -54,28 +54,23 @@ router.get("/callback", async (req, res) => {
             return res.status(500).send("Failed to retrieve access token");
         }
 
-        // Use access token to fetch team details
-        const teamResponse = await axios.get("https://api.clickup.com/api/v2/team/", {
+        // Use access token to fetch user details
+        const userResponse = await axios.get("https://api.clickup.com/api/v2/user", {
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
         });
 
-        const teamData = teamResponse.data;
+        const userData = userResponse.data;
 
-        if (!teamData.teams || teamData.teams.length === 0) {
-            return res.status(500).send("No team information available");
+        if (!userData.user || !userData.user.email) {
+            return res.status(500).send("Unable to fetch user information");
         }
 
-        // Extract user and team details
-        const team = teamData.teams[0]; // Assuming the user belongs to the first team
-        const name = team.members[0].user.username;
-        const email = team.members[0].user.email;
-        
-    
-        if (!email) {
-            return res.status(500).send("Unable to fetch user email");
-        }
+        // Extract user details
+        const userid = userData.user.id;
+        const name = userData.user.username;
+        const email = userData.user.email;
 
         // Check if user exists
         let users = readUsers();
@@ -84,7 +79,7 @@ router.get("/callback", async (req, res) => {
         if (!user) {
             // If user doesn't exist, register them
             const newUser = {
-                id: users.length + 1,
+                id: userid,
                 email,
                 name: name || "New User",
                 password: null, // ClickUp login users won't have passwords
